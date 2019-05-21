@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+
+    <title>Maestro</title>
+
+    <base href="/" />
+  </head>
+
+  <body>
+
+    <h2>Please configure OAuth</h2>
+
+    <p>This instance has no OAuth configuration. To configure OAuth,
+    please obtain the correct credentials from the OAuth provider and
+    submit them here. All parameters are required.</p>
+
+    <form action="/login_config" method="post">
+      <div>
+        <label for="clientid">Client Id:</label>
+        <input type="text" id="clientid" name="clientid" size="72">
+      </div>
+      <div>
+        <label for="secret">Secret:</label>
+        <input type="text" id="secret" name="secret" size="24">
+      </div>
+      <div>
+        <label for="redirect">Redirect URL:</label>
+        <input type="text" id="redirect" name="redirect" size="72">
+        (Example: http://localhost:3000/auth/google_oauth2/callback. This URL needs to match the one configured in Google.)
+      </div>
+      <div>
+        <label for="domain">Domain:</label>
+        <input type="text" id="domain" name="domain" size="24">
+        (logins are going to be restricted to this domain only)
+      </div>
+      <div class="button">
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+
+
+  </body>
+
+</html>

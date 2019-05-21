@@ -1,0 +1,9 @@
+maestro
+run.sh
+credentials.json
+bindata.go
+node_modules
+npm-debug.log
+assets_gen
+dist
+.idea

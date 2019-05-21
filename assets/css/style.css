@@ -1,0 +1,20 @@
+/*
+ * These are only global styles. For component-specific styles, use react inline styles.
+ */
+
+body {
+  background-color: steelblue;
+  padding: 20px;
+  margin: 0;
+}
+h1, h2, p, ul, li {
+  font-family: Helvetica, Arial, sans-serif;
+}
+table, th, td {
+  padding: 10px;
+}
+td {
+  height: 30px;
+  vertical-align: middle;
+}
+tr.striped:nth-child(even) {background-color: #f2f2f2;}
