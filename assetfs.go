@@ -1,3 +1,5 @@
+// +build !builtinassets
+
 /* Copyright 2019 Vox Media, Inc.
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +16,6 @@
 
 // Fake assetfs symbol satisfaction. Does not build when the
 // builtin-assets tag is specified.
-
-// +build !builtinassets
 
 package main
 
