@@ -238,7 +238,9 @@ func (r *Run) processCycle(m *Model) error {
 				if job.Type == "load" {
 					status := m.GetImportStatus(job.TableId)
 					if status == ImpError {
-						// fail this run
+						// fail this run, but first clear the error
+						// NB: if import status is not deleted, subsequent runs will keep on failing
+						m.DeleteImportStatus(job.TableId)
 						return fmt.Errorf("Errors encountered during import of table %v.", job.TableId)
 					}
 					if status == ImpNone {
