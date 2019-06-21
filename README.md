@@ -1,7 +1,7 @@
 
 ### Maestro ###
 
-Maestro is SQL-centric tool for orchestrating BigQuery transofrmations
+Maestro is SQL-centric tool for orchestrating BigQuery transformations
 and data import/export.
 
 For detailed documentation see https://godoc.org/github.com/voxmedia/maestro

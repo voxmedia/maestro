@@ -405,6 +405,8 @@ func resubmit(m *Model, job *BQJob, delay time.Duration) error {
 	if err := submitJob(job, m); err != nil {
 		return err
 	}
+
+	go monitorJob(job, m)
 	log.Printf("resubmit() on re-submit, new job_id: %s (%d).", job.BQJobId, job.Id)
 	return nil
 }
@@ -509,7 +511,7 @@ func postCompletionExtract(m *Model, t *Table, job *BQJob) {
 func postCompletionLoad(m *Model, t *Table, job *BQJob) {
 	// Delete the GCS files as a nice clean-up gesture
 	if err := loadCleanup(m, job, t); err != nil {
-		log.Printf("monitorJob(): cleanup error (ignoring): %v.", err)
+		log.Printf("postCompletionLoad(): cleanup error (ignoring): %v.", err)
 	}
 }
 
