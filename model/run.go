@@ -376,7 +376,7 @@ func (r *Run) loadRunUnfinishedJobGraph(m *Model) (scheduler.Graph, error) {
 	return graphFromJobsById(byId)
 }
 
-func loadRunJobGraph(m *Model, runId int64) (scheduler.Graph, error) {
+var loadRunJobGraph = func(m *Model, runId int64) (scheduler.Graph, error) {
 
 	jobs, err := m.SelectBQJobsByRunId(runId)
 	if err != nil {
@@ -426,6 +426,7 @@ type runTick struct {
 }
 
 func nextRunTime(now time.Time, period, offset time.Duration) time.Time {
+	// TODO: Should this error on too large offset?
 	next := now.Truncate(period).Add(offset)
 	if next.Before(now) {
 		// Now in the period, but the offset is already in the past;
@@ -435,24 +436,43 @@ func nextRunTime(now time.Time, period, offset time.Duration) time.Time {
 	return next
 }
 
+// Given now, step (resolution) and a Freq, return a pointer to next
+// tick or nil
+var nextRunTick = func(now time.Time, step time.Duration, freq *Freq) *runTick {
+	nextStep := now.Truncate(step).Add(step)
+	nextRun := nextRunTime(now, freq.Period, freq.Offset)
+	if nextRun.After(now) && nextRun.Before(nextStep) || nextRun.Equal(nextStep) {
+		return &runTick{freq: freq, tooLate: nextRun.Add(freq.Period)}
+	}
+	return nil
+}
+
 // Given now, step (resolution) and a slice of Freq, return ticks for
 // the Freqs that should execute after now and before or on next step.
 func nextRunTicks(now time.Time, step time.Duration, freqs []*Freq) []runTick {
 	var result []runTick
 	for _, freq := range freqs {
-		nextStep := now.Truncate(step).Add(step)
-		nextRun := nextRunTime(now, freq.Period, freq.Offset)
-		if nextRun.After(now) && nextRun.Before(nextStep) || nextRun.Equal(nextStep) {
-			result = append(result, runTick{freq: freq, tooLate: nextRun.Add(freq.Period)})
+		if tick := nextRunTick(now, step, freq); tick != nil {
+			result = append(result, *tick)
 		}
 	}
 	return result
 }
 
+// Start the ticker. Returns the channel which will be receiving
+// ticks, and another channel to which a bool can be sent to stop the
+// ticker.
+func startTicker(m *Model, step time.Duration) (<-chan runTick, chan<- bool) {
+	ticks := make(chan runTick, 8)
+	stop := make(chan bool)
+	go runTicker(m, step, ticks, stop)
+	return ticks, stop
+}
+
 // The ticker works like this: we have a step, which is the
 // minimal time resolution. Every step we wake up and check if
 // anything needs to run at the next step.
-func runTicker(m *Model, step time.Duration, ch chan<- runTick) {
+func runTicker(m *Model, step time.Duration, ticks chan<- runTick, stop <-chan bool) {
 
 	var nextTicks []runTick
 
@@ -461,8 +481,16 @@ func runTicker(m *Model, step time.Duration, ch chan<- runTick) {
 		if len(nextTicks) > 0 {
 			for _, tick := range nextTicks {
 				log.Printf("Triggering run for period %q: %v +%v", tick.freq.Name, tick.freq.Period, tick.freq.Offset)
-				ch <- tick
+				ticks <- tick
 			}
+		}
+
+		// Do we need to exit?
+		select {
+		case <-stop:
+			log.Printf("runTicker: exiting.")
+			close(ticks)
+			return
 		}
 
 		// Get the frequencies
@@ -510,13 +538,11 @@ func triggerRuns(m *Model) {
 		log.Printf("triggerRuns(): error %v", err)
 	}
 
-	const step = 10 * time.Second
-	ch := make(chan runTick, 8)
 	log.Printf("Starting run ticker.")
-	go runTicker(m, step, ch)
+	ch, _ := startTicker(m, 10*time.Second)
 
 	// This is what actually starts the runs
-	go func(ch chan runTick) {
+	go func(ch <-chan runTick) {
 		for t := range ch {
 			now := time.Now()
 			if t.tooLate.After(now) {
