@@ -130,7 +130,7 @@ func Test_nextRunTick(t *testing.T) {
 }
 
 func Test_nextRunTicks(t *testing.T) {
-	// Mainly jusr count the number of times nextRunTick is called
+	// Mainly just count the number of times nextRunTick is called
 
 	save := nextRunTick
 	defer func() { nextRunTick = save }()

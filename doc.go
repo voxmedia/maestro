@@ -14,7 +14,7 @@
 
 Maestro is a SQL-centric tool for orchestrating BigQuery jobs. Maestro
 also supports data transfers from and to Google Cloud Storage (GCS)
-and relational databases (presently PotgresSQL and MySQL).
+and relational databases (presently PostgresSQL and MySQL).
 
 Maestro is a "catalog" of SQL statements. Key feature of Maestro is
 the ability to infer dependencies by examining the SQL and without any
