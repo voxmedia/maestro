@@ -491,6 +491,7 @@ func runTicker(m *Model, step time.Duration, ticks chan<- runTick, stop <-chan b
 			log.Printf("runTicker: exiting.")
 			close(ticks)
 			return
+		default:
 		}
 
 		// Get the frequencies
