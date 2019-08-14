@@ -15,22 +15,35 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
 	"relative/crypto"
 )
 
+// This type alias allows us to use StructScan with User.
+type GroupArray []*Group
+
+func (g *GroupArray) Scan(src interface{}) error {
+	if src != nil {
+		if err := json.Unmarshal(src.([]byte), g); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // User information.
 type User struct {
 	Id         int64
-	OAuthId    string   `db:"oauth_id"`  // Id issued by OAuth
-	Email      string   `db:"email"`     // User email (also retreived from OAuth)
-	Disabled   bool     `db:"disabled"`  // If true, the used can never log in
-	Admin      bool     `db:"admin"`     // Admins can do anything
-	CryptToken string   `db:"api_token"` // The token for pythonlib (or other direct API access)
-	PlainToken []byte   `db:"-"`         //
-	Groups     []*Group `db:"-"`         // Groups this user is in (comes from user_groups table join)
+	OAuthId    string     `db:"oauth_id"`  // Id issued by OAuth
+	Email      string     `db:"email"`     // User email (also retreived from OAuth)
+	Disabled   bool       `db:"disabled"`  // If true, the used can never log in
+	Admin      bool       `db:"admin"`     // Admins can do anything
+	CryptToken string     `db:"api_token"` // The token for pythonlib (or other direct API access)
+	PlainToken []byte     `db:"-"`         //
+	Groups     GroupArray `db:"groups"`    // Groups this user is in (comes from user_groups table join)
 }
 
 // Generate and save an API access token. Such a token allowes access

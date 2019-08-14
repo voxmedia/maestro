@@ -31,7 +31,7 @@ import (
 	"relative/scheduler"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -383,7 +383,7 @@ func (p *pgDb) SelectOrInsertUserByOAuthId(oAuthId, email string) (*model.User, 
 		"SELECT id, oauth_id, email, api_token, admin, disabled FROM  %[1]susers AS users WHERE oauth_id = $1",
 		p.prefix)
 
-	rows, err := p.dbConn.Query(stmt, oAuthId)
+	rows, err := p.dbConn.Queryx(stmt, oAuthId)
 	if err != nil {
 		log.Printf("SelectOrInsertUserByOAuthId(): error: %v", err)
 		return nil, false, err
@@ -398,7 +398,7 @@ func (p *pgDb) SelectOrInsertUserByOAuthId(oAuthId, email string) (*model.User, 
 			"INSERT INTO %[1]susers AS users (oauth_id, email, disabled) VALUES ($1, $2, true) "+
 				"ON CONFLICT (oauth_id) DO UPDATE SET oauth_id = $1 "+
 				"RETURNING id, oauth_id, email, api_token, admin, disabled", p.prefix)
-		rows, err = p.dbConn.Query(stmt, oAuthId, email)
+		rows, err = p.dbConn.Queryx(stmt, oAuthId, email)
 		if err != nil {
 			log.Printf("SelectOrInsertUserByOAuthId(): error: %v", err)
 			return nil, false, err
@@ -420,7 +420,7 @@ func (p *pgDb) SelectUser(id int64) (*model.User, error) {
 		"SELECT id, oauth_id, email, api_token, admin, disabled FROM  %[1]susers AS users WHERE id = $1",
 		p.prefix)
 
-	rows, err := p.dbConn.Query(stmt, id)
+	rows, err := p.dbConn.Queryx(stmt, id)
 	if err != nil {
 		log.Printf("SelectUser(): error: %v", err)
 		return nil, err
@@ -497,23 +497,11 @@ func (p *pgDb) SaveUser(u *model.User) error {
 	return txn.Commit()
 }
 
-func (p *pgDb) userFromRow(rows *sql.Rows) (*model.User, error) {
-	var (
-		user model.User
-		err  error
-	)
-	cols, _ := rows.Columns()
-	if len(cols) == 7 {
-		user.Groups = make([]*model.Group, 0) // Avoid JSON null
-		var groups []int64
-		err = rows.Scan(&user.Id, &user.OAuthId, &user.Email, &user.CryptToken, &user.Admin, &user.Disabled, pq.Array(&groups))
-		for _, gid := range groups {
-			user.Groups = append(user.Groups, &model.Group{Id: gid})
-		}
-	} else {
-		err = rows.Scan(&user.Id, &user.OAuthId, &user.Email, &user.CryptToken, &user.Admin, &user.Disabled)
+func (p *pgDb) userFromRow(rows *sqlx.Rows) (*model.User, error) {
+	var user = model.User{
+		Groups: make(model.GroupArray, 0), // avoid JSON null
 	}
-	if err != nil {
+	if err := rows.StructScan(&user); err != nil {
 		log.Printf("userFromRow(): error scanning row: %v", err)
 		return nil, err
 	}
@@ -535,28 +523,18 @@ func (p *pgDb) userFromRow(rows *sql.Rows) (*model.User, error) {
 
 func (p *pgDb) SelectUsers() ([]*model.User, error) {
 
-	groups, err := p.SelectGroups()
-	if err != nil {
-		log.Printf("SelectUsers(): error: %v", err)
-		return nil, err
-	}
-
-	groupsById := make(map[int64]*model.Group)
-	for _, g := range groups {
-		groupsById[g.Id] = g
-	}
-
-	// FILTER is required or Scan(pq.Array()) gets confused by NULLs
+	// FILTER is required to avoid arrays with nulls
 	stmt := fmt.Sprintf(
 		"SELECT u.id, oauth_id, email, api_token, admin, disabled, "+
-			" ARRAY_AGG(ug.group_id) FILTER (WHERE ug.group_id IS NOT NULL) AS groups "+
+			" TO_JSON(ARRAY_AGG(g.*) FiLTER (WHERE g.id IS NOT NULL)) AS groups "+
 			"FROM %[1]susers u "+
 			"LEFT JOIN %[1]suser_groups ug ON ug.user_id = u.id "+
+			"LEFT JOIN %[1]sgroups g ON ug.group_id = g.id "+
 			"GROUP BY 1, 2, 3, 4, 5, 6 "+
 			"ORDER BY email",
 		p.prefix)
 
-	rows, err := p.dbConn.Query(stmt)
+	rows, err := p.dbConn.Queryx(stmt)
 	if err != nil {
 		log.Printf("SelectUsers(): error: %v", err)
 		return nil, err
@@ -569,12 +547,6 @@ func (p *pgDb) SelectUsers() ([]*model.User, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		// fix up groups
-		for i, g := range user.Groups {
-			user.Groups[i] = groupsById[g.Id]
-		}
-
 		users = append(users, user)
 	}
 	return users, nil
