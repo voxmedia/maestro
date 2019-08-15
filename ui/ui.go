@@ -302,7 +302,7 @@ func usersHandler(m *model.Model) http.Handler {
 
 func userPutHandler(m *model.Model) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var u model.User
+		var u model.UserWithGroups
 		err := decodeJson(r, &u)
 		if err != nil {
 			log.Printf("userPutHandler() error: %v\n", err)
@@ -352,7 +352,7 @@ func userPutHandler(m *model.Model) http.Handler {
 			if err := m.SlackAlert(msg); err != nil {
 				log.Printf("userPutHandler: slack error: %v", err)
 			}
-		}(user, thisUser)
+		}(&user.User, &thisUser.User)
 
 		// Send response
 
@@ -842,7 +842,7 @@ func userTokenGetHandler(m *model.Model) http.Handler {
 			if err := m.SlackAlert(msg); err != nil {
 				log.Printf("userTokenGetHandler: slack error: %v", err)
 			}
-		}(user)
+		}(&user.User)
 
 		tok := encodeToken(user.Id, user.PlainToken)
 		fmt.Fprintf(w, `{"api_token":%q}`, tok)

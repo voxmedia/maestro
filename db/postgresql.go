@@ -377,7 +377,7 @@ func (p *pgDb) prepareSqlStatements() error {
 	return nil
 }
 
-func (p *pgDb) SelectOrInsertUserByOAuthId(oAuthId, email string) (*model.User, bool, error) {
+func (p *pgDb) SelectOrInsertUserByOAuthId(oAuthId, email string) (*model.UserWithGroups, bool, error) {
 
 	stmt := fmt.Sprintf(
 		"SELECT id, oauth_id, email, api_token, admin, disabled FROM  %[1]susers AS users WHERE oauth_id = $1",
@@ -414,7 +414,7 @@ func (p *pgDb) SelectOrInsertUserByOAuthId(oAuthId, email string) (*model.User, 
 	return user, created, err
 }
 
-func (p *pgDb) SelectUser(id int64) (*model.User, error) {
+func (p *pgDb) SelectUser(id int64) (*model.UserWithGroups, error) {
 
 	stmt := fmt.Sprintf(
 		"SELECT id, oauth_id, email, api_token, admin, disabled FROM  %[1]susers AS users WHERE id = $1",
@@ -427,7 +427,7 @@ func (p *pgDb) SelectUser(id int64) (*model.User, error) {
 	}
 	defer rows.Close()
 
-	var user *model.User
+	var user *model.UserWithGroups
 	if rows.Next() {
 		if user, err = p.userFromRow(rows); err != nil {
 			return nil, err
@@ -462,7 +462,7 @@ func (p *pgDb) SelectUser(id int64) (*model.User, error) {
 	return user, nil
 }
 
-func (p *pgDb) SaveUser(u *model.User) error {
+func (p *pgDb) SaveUser(u *model.UserWithGroups) error {
 	if len(u.PlainToken) > 0 {
 		cryptToken, err := crypto.EncryptString(fmt.Sprintf("%x", u.PlainToken), p.secret)
 		if err != nil {
@@ -497,8 +497,8 @@ func (p *pgDb) SaveUser(u *model.User) error {
 	return txn.Commit()
 }
 
-func (p *pgDb) userFromRow(rows *sqlx.Rows) (*model.User, error) {
-	var user = model.User{
+func (p *pgDb) userFromRow(rows *sqlx.Rows) (*model.UserWithGroups, error) {
+	var user = model.UserWithGroups{
 		Groups: make(model.GroupArray, 0), // avoid JSON null
 	}
 	if err := rows.StructScan(&user); err != nil {
@@ -521,7 +521,7 @@ func (p *pgDb) userFromRow(rows *sqlx.Rows) (*model.User, error) {
 	return &user, nil
 }
 
-func (p *pgDb) SelectUsers() ([]*model.User, error) {
+func (p *pgDb) SelectUsers() ([]*model.UserWithGroups, error) {
 
 	// FILTER is required to avoid arrays with nulls
 	stmt := fmt.Sprintf(
@@ -541,7 +541,7 @@ func (p *pgDb) SelectUsers() ([]*model.User, error) {
 	}
 	defer rows.Close()
 
-	users := make([]*model.User, 0, 16)
+	users := make([]*model.UserWithGroups, 0, 16)
 	for rows.Next() {
 		user, err := p.userFromRow(rows)
 		if err != nil {

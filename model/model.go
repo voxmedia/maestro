@@ -172,7 +172,7 @@ func (m *Model) ValidUser(oAuthId, email string) int64 {
 				return 0
 			}
 		} else {
-			defer func(user *User) {
+			defer func(user *UserWithGroups) {
 				m.SlackAlert(fmt.Sprintf("New (disabled) Maestro user created: (%d) %s",
 					user.Id, user.Email))
 			}(user)

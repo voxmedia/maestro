@@ -37,19 +37,24 @@ func (g *GroupArray) Scan(src interface{}) error {
 // User information.
 type User struct {
 	Id         int64
-	OAuthId    string     `db:"oauth_id"`  // Id issued by OAuth
-	Email      string     `db:"email"`     // User email (also retreived from OAuth)
-	Disabled   bool       `db:"disabled"`  // If true, the used can never log in
-	Admin      bool       `db:"admin"`     // Admins can do anything
-	CryptToken string     `db:"api_token"` // The token for pythonlib (or other direct API access)
-	PlainToken []byte     `db:"-"`         //
-	Groups     GroupArray `db:"groups"`    // Groups this user is in (comes from user_groups table join)
+	OAuthId    string `db:"oauth_id"`  // Id issued by OAuth
+	Email      string `db:"email"`     // User email (also retreived from OAuth)
+	Disabled   bool   `db:"disabled"`  // If true, the used can never log in
+	Admin      bool   `db:"admin"`     // Admins can do anything
+	CryptToken string `db:"api_token"` // The token for pythonlib (or other direct API access)
+	PlainToken []byte `db:"-"`         //
+}
+
+// User information with groups
+type UserWithGroups struct {
+	User
+	Groups GroupArray `db:"groups"` // Groups this user is in (comes from user_groups table join)
 }
 
 // Generate and save an API access token. Such a token allowes access
 // to some Maestro API's without other authentication, the generated
 // token should be kept securely.
-func (u *User) GenerateAndSaveToken(m *Model) error {
+func (u *UserWithGroups) GenerateAndSaveToken(m *Model) error {
 	token, err := crypto.GenerateToken()
 	if err != nil {
 		return err
@@ -64,6 +69,6 @@ func (u *User) GenerateAndSaveToken(m *Model) error {
 		if err := m.SlackAlert(msg); err != nil {
 			log.Printf("GenerateAndSaveToken: slack error: %v", err)
 		}
-	}(u)
+	}(&u.User)
 	return nil
 }

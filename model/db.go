@@ -18,10 +18,10 @@ package model
 // done. the model retains a reference to the db.
 
 type db interface {
-	SelectOrInsertUserByOAuthId(oAuthId, email string) (*User, bool, error)
-	SelectUser(id int64) (*User, error)
-	SaveUser(*User) error
-	SelectUsers() ([]*User, error)
+	SelectOrInsertUserByOAuthId(oAuthId, email string) (*UserWithGroups, bool, error)
+	SelectUser(id int64) (*UserWithGroups, error)
+	SaveUser(*UserWithGroups) error
+	SelectUsers() ([]*UserWithGroups, error)
 
 	SelectGroups() ([]*Group, error)
 	DeleteGroup(id int64) error
