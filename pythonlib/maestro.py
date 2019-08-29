@@ -30,7 +30,6 @@ Installation: simply copy this file into your site-packages directory.
 
 import os
 import sys
-import json
 from dateutil.parser import parse as timeparse
 import time
 from gzip import GzipFile
@@ -81,14 +80,14 @@ class Table(object):
         headers = { "X-Api-Token" : self._token }
         url = urljoin(self._url, "table/%s/id" % name)
         r = requests.get(url, headers=headers)
-        return json.loads(r.content)["Id"]
+        return r.json()["Id"]
 
     def _update_status_full(self):
         headers = { "X-Api-Token" : self._token }
         url = urljoin(self._url, "table/%d" % self._table_id)
         r = requests.get(url, headers=headers)
 
-        self._status = json.loads(r.content)
+        self._status = r.json()
         self._name = self._status['Name']
         self._dataset = self._status['Dataset']
         self._last_ok_run = timeparse(self._status["LastOkRunEndAt"])
@@ -100,7 +99,7 @@ class Table(object):
         url = urljoin(self._url, "table/%d/status" % self._table_id)
         r = requests.get(url, headers=headers)
 
-        status = json.loads(r.content)
+        status = r.json()
         if status["Error"]:
             raise Exception(status["Error"])
         self._last_ok_run = timeparse(status["LastOkRunEndAt"])
@@ -112,7 +111,7 @@ class Table(object):
         headers = { "X-Api-Token" : self._token }
         url = urljoin(self._url, "table/%d/bq_info" % self._table_id)
         r = requests.get(url, headers=headers)
-        self._bq_info = json.loads(r.content)
+        self._bq_info = r.json()
         return self._bq_info
 
     def _is_external(self):
