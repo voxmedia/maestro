@@ -525,7 +525,7 @@ func logNextRuns(m *Model) error {
 	}
 	for _, freq := range freqs {
 		if freq.Active {
-			next := nextRunTime(time.Now(), freq.Offset, freq.Period)
+			next := nextRunTime(time.Now(), freq.Period, freq.Offset)
 			log.Printf("Next run for period %q is at: %v", freq.Name, next)
 		}
 	}
