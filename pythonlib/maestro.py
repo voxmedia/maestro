@@ -287,10 +287,10 @@ class Table(object):
     def gcs_upload(self, source):
         """Upload external table data.
 
-        For external tables, upload the data. The only supported
-        format is newline delimited JSON, i.e. one line per row. The
-        schema is automatically inferred by BigQuery. Every row format
-        must be same or this operation will fail.
+        For external tables, upload the data. Supported formats are
+        CSV and newline delimited JSON, i.e. one line per row. On
+        table creation the schema is automatically inferred by
+        BigQuery.
 
         """
         if not self._is_external():

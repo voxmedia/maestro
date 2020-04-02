@@ -38,7 +38,7 @@ const (
 	tableColumns = "id, user_id, group_id, dataset_id, name, query, disposition, partitioned, legacy_sql, description, " +
 		"error, running, extract, notify_extract_url, sheets_extract, sheet_id, import_db_id, imported_at, id_column, " +
 		"last_id, freq_id, conditions, reimport_cond, created_at, deleted_at, last_ok_run_end_at, external_tmout, " +
-		"export_db_id, export_table_name "
+		"external_format, export_db_id, export_table_name "
 	bqJobColumns = "id, created_at, table_id, user_id, run_id, parents, bq_job_id, configuration, " +
 		"type, status, query_stats, load_stats, extract_stats, creation_time, start_time, " +
 		"end_time, total_bytes_processed, total_bytes_billed, destination_urls, " +
