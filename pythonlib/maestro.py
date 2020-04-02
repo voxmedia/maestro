@@ -233,10 +233,21 @@ class Table(object):
                 self._bytes += len(s)
                 return s
 
+            # iterate over urls
             def _iterator(self, urls):
                 for url in urls:
                     rr = _url_reader(url, self._chunk_sz)
                     yield GzipFile(fileobj=rr)
+
+            # line iterator protocol
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                line = self.readline()
+                if not line:
+                    raise StopIteration()
+                return str(line, 'utf8')
 
         if not self._status["Extracts"]["URLs"]:
             raise Exception("No GCS extracts found for this table.")
