@@ -1403,7 +1403,7 @@ func tableBQInfoHandler(m *model.Model) http.Handler {
 		}
 
 		bqi, err := t.GetBQInfo(m)
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "notFound") {
 			log.Printf("tableBQInfoHandler: error: %v", err)
 			http.Error(w, "This is an error", http.StatusBadRequest)
 			return
