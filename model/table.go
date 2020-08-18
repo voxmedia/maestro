@@ -184,7 +184,7 @@ func (t *Table) QueueGitCommit(m *Model, email string) error {
 // Construct a valid GitHub URL to this particular table
 func (t *Table) GithubUrl(m *Model) string {
 	u := m.git.Url()
-	u.Path = path.Join(u.Path, "blob/master", t.relpath())
+	u.Path = path.Join(u.Path, "blob/trunk", t.relpath())
 	return u.String()
 }
 
